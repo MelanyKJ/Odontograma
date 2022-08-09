@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="/layout/template :: header"></head>
+<script src="https://kit.fontawesome.com/77c80ff425.js" crossorigin="anonymous"></script>
+<style>
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+canvas{
+    background: #fff;
+    border: 1px dashed;
+    margin: auto;
+}
+
+botones {
+    display: inline-block;
+    background: #69c;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 100px;
+}
+
+.pen-tools{
+    display: flex;
+    justify-content: space-around;
+    align-content: center;
+    width: 60%;
+    margin: auto;
+}
+
+p {
+    text-align: center;
+}
+
+.fa-refresh{
+    margin-left:  10px;
+    background-color: red;
+    padding: 5px 10px;
+    border-radius: 100px;
+    color: white;
+    cursor: pointer;
+}
+
+.pen-size{
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.board {
+    width: 800px;
+    margin:auto;
+}
+
+.drawing-colors{
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.color-circle{
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    margin-left: 5px;
+    border: 1px solid black;
+    cursor: pointer;
+
+}
+
+.color-circle:nth-child(1){
+    background-color: hotpink;
+}
+
+.color-circle:nth-child(2){
+    background-color: orange;
+}
+
+.color-circle:nth-child(3){
+    background-color: red;
+}
+
+.color-circle:nth-child(4){
+    background-color: yellow;
+}
+.color-circle:nth-child(5){
+    background-color: black;
+}
+.color-circle:nth-child(6){
+    background-color: blue;
+}
+.color-circle:nth-child(7){
+    background-color: white;
+}
+
+.color-circle:nth-child(8){
+    background-color: green;
+}
+
+.active {
+    transform: scale(1.3);
+}
+</style>
+<body>
+<div class="container">
+	<div class="row">
+		<div class="col-12">
+			<nav th:replace="/layout/template :: navegacion"></nav>
+			<div class="card mt-5">
+			<br>
+			<form class="form-inline" th:action="@{/}">
+				<div class="form-group mb-2">
+					&nbsp;&nbsp;&nbsp;<label>Filtrar: </label>
+				</div>
+				<div class="form-group mx-sm-3 mb-2">
+				<input type="text" name="keyword" class="form-control" id="keyword" th:value="${keyword}" placeholder="DNI Paciente">
+				</div>
+				<input type="submit" class="btn btn-info mb-2" value="BUSCAR"/>
+				&nbsp;&nbsp;
+				<input type="button" class="btn btn-info mb-2" value="Clear" id="btnClear" onclick="clearSearch()" />
+				&nbsp;&nbsp;				
+			</form>
+	<br/><br/>
+	
+	<table border="1" cellpadding="10">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>NOMBRE</th>
+				<th>APELLIDO</th>							
+			</tr>
+		</thead>
+		<tbody>
+			<tr th:each="paciente : ${listPacientes}">
+				<td th:text="${paciente.id}">ID</td>
+				<td th:text="${paciente.nombre}">NOMBRE</td>
+				<td th:text="${paciente.apellido}">APELLIDO</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+<script type="text/javascript">
+	function clearSearch() {
+		window.location = "[[@{/}]]";
+	}
+</script>
+
+<div class="card-header"></div>
+	<div class="card-body">
+	    <p>
+      
+
+      <i class="fa fa-refresh refresh-btn"><strong>Borrar</strong></i>
+    </p>
+    <div id="pen-tools" class="pen-tools">
+      <div id="drawing-colors" class="drawing-colors">
+        <div
+          class="color-circle active"
+          data-color="hotpink"
+          onclick="selectColor(this)"
+        ></div>
+        <div
+          class="color-circle"
+          data-color="orange"
+          onclick="selectColor(this)"
+        ></div>
+        <div
+          class="color-circle"
+          data-color="red"
+          onclick="selectColor(this)"
+        ></div>
+        <div
+          class="color-circle"
+          data-color="yellow"
+          onclick="selectColor(this)"
+        ></div>
+        <div
+          class="color-circle"
+          data-color="black"
+          onclick="selectColor(this)"
+        ></div>
+        <div
+          class="color-circle"
+          data-color="blue"
+          onclick="selectColor(this)"
+        ></div>
+        <div
+          class="color-circle"
+          data-color="white"
+          onclick="selectColor(this)"
+        ></div>
+        <div
+          class="color-circle"
+          data-color="green"
+          onclick="selectColor(this)"
+        ></div>
+      </div>
+      <div id="favContainer">
+        <label for="favcolor">Color:</label>
+        <input
+          type="color"
+          name="favcolor"
+          id="favcolor"
+          value="#ff0000"
+          onchange="favColor(this)"
+        />
+      </div>
+      <div id="pen-size" class="pen-size">
+        <label for="pen-size"><i class="fa fa-pencil"></i> Tamaño</label>
+        <input
+          type="range"
+          name="pen-size"
+          id="pen-size"
+          value="10"
+          step="5"
+          min="5"
+          max="40"
+          onchange="penSizeChange(this.value)"
+        />
+      </div>
+    </div>
+
+    <div class="board">
+      <canvas width="800px" height="590"></canvas>
+    </div>
+	</div>
+<div>
+<script>
+const colorCircle = document.querySelectorAll(".color-circle");
+
+let penSize = 10;
+let isDrawing;
+let x;
+let y;
+
+var canvas = document.querySelector("canvas");
+c = canvas.getContext("2d");
+
+canvas.addEventListener("mousedown", (e) => {
+  isDrawing = true;
+  x = e.offsetX;
+  y = e.offsetY;
+});
+
+canvas.addEventListener("mouseup", () => {
+  isDrawing = false;
+  x = undefined;
+  y = undefined;
+});
+
+canvas.addEventListener("mousemove", (event) => {
+  draw(event.offsetX, event.offsetY);
+});
+
+c.fillStyle = "hotpink";
+c.strokeStyle = c.fillStyle;
+
+function draw(x2, y2) {
+  if (isDrawing) {
+    c.beginPath();
+    c.arc(x2, y2, penSize, 0, Math.PI * 2);
+    c.closePath();
+    c.fill();
+    //draw line
+    drawLine(x, y, x2, y2);
+  }
+
+  x = x2;
+  y = y2;
+}
+
+function drawLine(x1, y1, x2, y2) {
+  c.beginPath();
+  c.moveTo(x1, y1);
+  c.lineTo(x2, y2);
+  c.strokeStyle = c.fillStyle;
+
+  c.lineWidth = penSize * 2;
+  c.stroke();
+}
+
+document.querySelector(".fa-refresh").addEventListener("click", function () {
+  c.clearRect(0, 0, canvas.width, canvas.height);
+});
+
+const selectColor = (elem) => {
+  removeActiveCircleColor();
+
+  c.fillStyle = elem.getAttribute("data-color");
+  elem.classList.add("active");
+};
+
+const removeActiveCircleColor = () => {
+  colorCircle.forEach((circle) => {
+    circle.classList.remove("active");
+  });
+};
+
+function penSizeChange(pensize) {
+  penSize = pensize;
+}
+
+const favColor = (elem) => {
+  removeActiveCircleColor();
+  c.fillStyle = elem.value;
+};
+
+document
+  .querySelector("a")
+  .addEventListener(
+    "click",
+    (event) => (event.target.href = canvas.toDataURL())
+  );
+
+</script>
+</div>
+</body>
+</html>
